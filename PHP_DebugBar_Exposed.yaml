@@ -1,0 +1,21 @@
+id: found-exposure
+
+info:
+  name: PHP DebugBar Exposure
+  author: Ghost_Sec
+  severity: high
+
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}"
+      - "{{BaseURL}}/_debugbar/open"
+
+    host-redirects: true
+    max-redirects: 2
+    matchers:
+      - type: dsl
+        dsl:
+          - 'contains(body_1, "phpdebugbar") && contains(body, "widget")'
+          - 'contains_all(body_2, "\"utime\"","\"datetime\"","{\"id") && contains(content_type_2, "application/json")'
+        condition: or

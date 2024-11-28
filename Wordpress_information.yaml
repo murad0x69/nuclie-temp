@@ -1,0 +1,66 @@
+id: sensitive_information_found
+#  ____ _               _                   _ 
+ #/ ___| |__   ___  ___| |_   ___  ___  ___| |
+#| |  _| '_ \ / _ \/ __| __| / __|/ _ \/ __| |
+#\ |_| | | | | (_) \__ \ |_  \__ \  __/ (__|_|
+ #\____|_| |_|\___/|___/\__| |___/\___|\___(_)
+
+info:
+  name: WordPress Accessible wp-config and backup files
+  author: Ghost_Sec #Master_Exploit
+  severity: high
+  tags: wordpress,backups,lfi
+
+requests:
+  - method: GET
+    path:
+      - '{{BaseURL}}/wp-config.php'
+      - '{{BaseURL}}/.wp-config.php.swp'
+      - '{{BaseURL}}/wp-config-sample.php'
+      - '{{BaseURL}}/wp-config.inc'
+      - '{{BaseURL}}/wp-config.old'
+      - '{{BaseURL}}/wp-config.txt'
+      - '{{BaseURL}}/wp-config.php.txt'
+      - '{{BaseURL}}/wp-config.php.bak'
+      - '{{BaseURL}}/wp-config.php.old'
+      - '{{BaseURL}}/wp-config.php.dist'
+      - '{{BaseURL}}/wp-config.php.inc'
+      - '{{BaseURL}}/wp-config.php.swp'
+      - '{{BaseURL}}/wp-config.php.html'
+      - '{{BaseURL}}/wp-config-backup.txt'
+      - '{{BaseURL}}/wp-config.php.save'
+      - '{{BaseURL}}/wp-config.php~'
+      - '{{BaseURL}}/wp-config.php.orig'
+      - '{{BaseURL}}/wp-config.php.original'
+      - '{{BaseURL}}/.env'
+      - '{{BaseURL}}/backup/wp-config.php'
+      - '{{BaseURL}}/old/wp-config.php'
+      - '{{BaseURL}}/previous/wp-config.php'
+      - '{{BaseURL}}/_wpeprivate/config.json'
+
+    headers:
+      Cache-Control: "no-cache"
+
+    matchers-condition: and
+    matchers:
+      - type: word
+        words:
+          - "DB_NAME"
+          - "DB_USER"
+          - "DB_PASSWORD"
+          - "define('DB_NAME'"
+          - "define('DB_USER'"
+          - "define('DB_PASSWORD'"
+          - "define('AUTH_KEY'"
+          - "define('SECURE_AUTH_KEY'"
+          - "WPENGINE_ACCOUNT"
+        part: body
+
+      - type: regex
+        regex:
+          - "DB_(NAME|USER|PASSWORD)"
+          - "define\\(\\s*'DB_"
+
+      - type: status
+        status:
+          - 200

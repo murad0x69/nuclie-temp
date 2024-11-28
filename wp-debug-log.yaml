@@ -1,0 +1,69 @@
+id: debuglog-found
+#  ____ _               _                   _ 
+ #/ ___| |__   ___  ___| |_   ___  ___  ___| |
+#| |  _| '_ \ / _ \/ __| __| / __|/ _ \/ __| |
+#\ |_| | | | | (_) \__ \ |_  \__ \  __/ (__|_|
+ #\____|_| |_|\___/|___/\__| |___/\___|\___(_)
+info:
+  name: WordPress sensitive debug.log exposed
+  author: Ghost_sec
+  severity: medium
+http:
+  - method: GET
+    path:
+      - "{{BaseURL}}/{{paths}}/debug.log"
+
+    payloads:
+      paths:
+        - 'wp-content'
+        - 'wordpress'
+        - 'wp'
+        - 'blog'
+        - 'plugins'
+        - 'wp-content/uploads/'
+
+    stop-at-first-match: true
+    host-redirects: true
+    max-redirects: 3
+    max-size: 5000
+    matchers-condition: and
+    matchers:
+      - type: word
+        part: header
+        words:
+          - octet-stream
+          - text/plain
+        condition: or
+        name: "Check Content-Type in Header"
+
+      - type: regex
+        part: body
+        regex:
+          - "[[0-9]{2}-[a-zA-Z]{3}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3}] PHP"
+        name: "Check for PHP Log Entry"
+
+      - type: status
+        status:
+          - 200
+        name: "HTTP Status 200 Check"
+
+      - type: word
+        part: body
+        words:
+          - "debug"
+          - "error"
+          - "warning"
+        condition: or
+        name: "Check for Log Keywords"
+
+    extractors:
+      - type: dsl
+        dsl:
+          - to_string(content_length) + " bytes"
+        name: "Extract Content Length"
+
+      - type: regex
+        part: body
+        regex:
+          - "([0-9]{2}-[a-zA-Z]{3}-[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z]{3})"
+        name: "Extract Timestamp from Logs"
